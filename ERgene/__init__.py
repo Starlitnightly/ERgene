@@ -105,9 +105,11 @@ def FindERG( data, depth=2):
     example = from_memberships(lp,data=range(len(lp)))
     end = time.time()
     print("calculate time:%.2fs"%(end-start))
-    print(result)
+    
     if depth>2:
         plot(example)
+        
+    return result
     
 
 
