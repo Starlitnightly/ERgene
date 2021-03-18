@@ -2,6 +2,8 @@ ERgene
 ======
 This is a python library to Find Candidate reference gene
 
+In new Version 1.2.0, the computing speed is increased by a factor of 100
+
 Where to get it
 ------
 Binary installers for the latest released version are available at the pypi
@@ -29,11 +31,12 @@ Example
 	import ERgene
 	import pandas as pd
 	data=pd.read_csv('gse.txt',sep='\t')#GSE125792
+	data=data.set_index(data.columns[0])#This is Ver1.2
 	ERgene.FindERG(data,3)
 
 **output**
 
-	calculate time:57.62s
+	calculate time:17.3s
 	['ASHGV40057862', 'ASHGV40057056', 'ASHGV40025887', 'ASHGV40056316', 'ASHGV40056377', 'ASHGV40057617', 'ASHGV40057263']
 
 if you use jupyter notebook, there is an Upsetplot will be generated.

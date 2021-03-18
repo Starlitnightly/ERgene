@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jan 20 21:05:00 2020
+Revised on Thur Mar 18 16:04:00 2021
 
 @author: Starlitnightly
 
-New Version 1.1.1
+New Version 1.2.3
 """
 
 import itertools
@@ -15,7 +16,7 @@ from upsetplot import plot
 
 
 
-def FindERG( data, depth=2):
+def FindERG( data, depth=2, sort_num=20):
     '''
     Find out endogenous reference gene
     
@@ -26,7 +27,9 @@ def FindERG( data, depth=2):
     depth:int
         Accuracy of endogenous reference gene,must be larger that 2
         The larger the number, the fewer genes are screened out,Accuracy improvement
-          
+    sort_num:int
+    	The size of the  peendogenous reference gener filter
+    	When the sample is large, it is recommended to increase the value	      
     Returns
     -------
     result:list
@@ -46,56 +49,59 @@ def FindERG( data, depth=2):
         return
     count=0
     result=[]#result
-    datana=pd.DataFrame()
-    data1=pd.DataFrame()
-    data2=pd.DataFrame()
-    for i in itertools.combinations(range(1,depth+1), 2): 
-        count=count+1 #calculate circle times
-        data=data.dropna() 
-        data=data.drop_duplicates(data.columns[0])
-        data.reset_index(drop=True, inplace=True)
-        
+    for i in itertools.combinations(data.columns[0:depth], 2):
+        start = time.time()
+        count=count+1
+        test=data.replace(0,np.nan).dropna()
+
         last_std=pd.DataFrame()
         length=len(data)//1000
         remain=len(data)-1000*length
-        for k in range(1,length+1):            
-            datana=data.iloc[1000*(k-1):1000*k,0:1]
-            data1=data.iloc[1000*(k-1):1000*k,i[0]:i[0]+1]
-            data2=data.iloc[1000*(k-1):1000*k,i[1]:i[1]+1]
-            l1=pd.DataFrame()
-            l2=pd.DataFrame()
-            for j in range(1000*(k-1),1000*k):
-                l1[datana.loc[j]]=data1
-                l2[datana.loc[j]]=data2
-            l1=l1.div(np.asarray(data.iloc[1000*(k-1):1000*k,i[0]]))
-            l2=l2.div(np.asarray(data.iloc[1000*(k-1):1000*k,i[1]]))           
-            l=l1-l2
-            l_std=l.std(axis=0)
-            l_std=l_std.sort_values()[0:20]
+        for k in range(1,length+1):  
+
+            test1=test[i[0]].iloc[1000*(k-1):1000*k]
+            test2=test[i[1]].iloc[1000*(k-1):1000*k]
+            data_len=len(test1.values)
+            table1=np.array(test1.values.tolist()*data_len).reshape(data_len,data_len)
+            table2=pd.DataFrame(table1.T/table1)
+            table2.index=test1.index
+
+            table4=np.array(test2.values.tolist()*data_len).reshape(data_len,data_len)
+            table5=pd.DataFrame(table4.T/table4)
+            table5.index=test1.index
+
+            table6=(table2-table5).std()
+            table6.index=test1.index
+            l_std=table6.sort_values()[0:sort_num]
             if(k==1):
                 last_std=l_std
             else:
                 last_std=pd.concat([last_std,l_std])
-        datana=data.iloc[length*1000:length*1000+remain,0:1]
-        data1=data.iloc[length*1000:length*1000+remain,i[0]:i[0]+1]
-        data2=data.iloc[length*1000:length*1000+remain,i[1]:i[1]+1]
-        l1=pd.DataFrame()
-        l2=pd.DataFrame()
-        for j in range(length*1000,length*1000+remain):
-            l1[datana.loc[j]]=data1
-            l2[datana.loc[j]]=data2
-        l1=l1.div(np.asarray(data.iloc[length*1000:length*1000+remain,i[0]]))
-        l2=l2.div(np.asarray(data.iloc[length*1000:length*1000+remain,i[1]]))       
-        l=l1-l2
-        l_std=l.std(axis=0)
-        l_std=l_std.sort_values()[0:20]
-        if(length>0):
-            last_std=pd.concat([last_std,l_std])
+
+        test1=test[i[0]].iloc[length*1000:length*1000+remain]
+        test2=test[i[1]].iloc[length*1000:length*1000+remain]
+        data_len=len(test1.values)
+        table1=np.array(test1.values.tolist()*data_len).reshape(data_len,data_len)
+        table2=pd.DataFrame(table1.T/table1)
+        table2.index=test1.index
+
+        table4=np.array(test2.values.tolist()*data_len).reshape(data_len,data_len)
+        table5=pd.DataFrame(table4.T/table4)
+        table5.index=test1.index
+
+        table6=(table2-table5).std()
+        table6.index=test1.index
+        l_std=table6.sort_values()[0:sort_num]
+
+        if(k==1):
+            last_std=l_std
         else:
-            last_std=l_std            
-        last_std=last_std.sort_values()[0:20]
-        
+            last_std=pd.concat([last_std,l_std])
+
+        last_std=last_std.sort_values()[0:sort_num]
+
         testlist=list(last_std.index)
+        #print(testlist)
         lp.append(testlist)
         #print(lllll)
         if(count==1):
@@ -107,8 +113,8 @@ def FindERG( data, depth=2):
     print("calculate time:%.2fs"%(end-start))
     print(result)
     if depth>2:
-        plot(example)
-    
+            plot(example)
+    return result
 
 
 def normalizationdata( data, ERGname):
@@ -127,11 +133,9 @@ def normalizationdata( data, ERGname):
     result:pandas.DataFrame
         A DataFrame disposed by standardization
     '''
-    l=data[data.iloc[:,0].isin([ERGname])]
-    da=data.iloc[:,1:len(data.columns)]/np.asarray(l.iloc[0,1:len(data.columns)])
-    da=da*l.iloc[0,1]
-    dataname=data.iloc[:,0:1]
-    da.insert(0,dataname.columns[0],dataname)
+    l=data[data.index.isin([ERGname])]
+    da=data.iloc[:,0:len(data.columns)]/np.asarray(l.iloc[0,0:len(data.columns)])
+    da=da*l.iloc[0,0]
     return da
 
             

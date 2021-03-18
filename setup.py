@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(  
     name = 'ERgene',  
-    version = '1.1.1',
+    version = '1.2.3',
     # keywords = ('chinesename',),  
     description = 'A python module that could analysis the ERGs',  
     license = 'MIT License',  
