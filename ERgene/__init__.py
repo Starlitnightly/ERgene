@@ -14,7 +14,7 @@ from upsetplot import from_memberships
 from upsetplot import plot
 
 
-def FindERG( data, depth=2, sort_num=20):
+def FindERG(data, depth=2, sort_num=20, verbose=False):
     '''
     Find out endogenous reference gene
 
@@ -28,14 +28,17 @@ def FindERG( data, depth=2, sort_num=20):
     sort_num:int
     	The size of the  peendogenous reference gener filter
     	When the sample is large, it is recommended to increase the value
+    verbose: bool
+        Make the function noisy, writing times and results.
     Returns
     -------
     result:list
         a list of endogenous reference gene
     '''
     lp=[]
-    import time,datetime
-    start = time.time()
+    if verbose:
+        import time,datetime
+        start = time.time()
     if depth==1:
         print('the depth must larger than 2')
         return
@@ -85,9 +88,10 @@ def FindERG( data, depth=2, sort_num=20):
         if(count>1):
             result=list(set(testlist).intersection(set(result))) #Venn
     example = from_memberships(lp,data=range(len(lp)))
-    end = time.time()
-    print("calculate time:%.2fs"%(end-start))
-    print(result)
+    if verbose:
+        end = time.time()
+        print("calculate time:%.2fs"%(end-start))
+        print(result)
     if depth>2:
         plot(example)
     return result
