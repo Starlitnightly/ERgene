@@ -14,7 +14,7 @@ from upsetplot import from_memberships
 from upsetplot import plot
 
 
-def FindERG(data, depth=2, sort_num=20, verbose=False):
+def FindERG(data, depth=2, sort_num=20, verbose=False, figure=False):
     '''
     Find out endogenous reference gene
 
@@ -45,14 +45,15 @@ def FindERG(data, depth=2, sort_num=20, verbose=False):
     if len(data.columns)<=2:
         print('the number of samples must larger than 2')
         return
-    if depth>(len(data.columns)-1):
+    if depth>(len(data.columns)):
         print('depth larger than samples')
         return
     count=0
     result=[]#result
     bucket_size = 1000
     for i in itertools.combinations(data.columns[0:depth], 2):
-        start = time.time()
+        if verbose:
+            start = time.time()
         count=count+1
         test=data.replace(0,np.nan).dropna()
 
@@ -92,7 +93,7 @@ def FindERG(data, depth=2, sort_num=20, verbose=False):
         end = time.time()
         print("calculate time:%.2fs"%(end-start))
         print(result)
-    if depth>2:
+    if depth>2 and figure==True:
         plot(example)
     return result
 
